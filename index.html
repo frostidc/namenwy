@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Namenwy Universe - Videolar</title>
+  <style>
+    body { background: #0f172a; color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+    h1 { text-align: center; margin-bottom: 20px; }
+    .video-list {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+    }
+    .video-item iframe {
+      width: 100%;
+      height: 350px;
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.7);
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Namenwy Universe Videoları</h1>
+
+  <div class="video-list" id="videoList">
+    <!-- Firebase'den videolar buraya gelecek -->
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getDatabase, ref, onValue, query, orderByChild } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBdaamFfj50Fg-XL47q5z4jmyDlGdW_alg",
+      authDomain: "ngame-f48c4.firebaseapp.com",
+      databaseURL: "https://ngame-f48c4-default-rtdb.firebaseio.com",
+      projectId: "ngame-f48c4",
+      storageBucket: "ngame-f48c4.firebasestorage.app",
+      messagingSenderId: "138981202469",
+      appId: "1:138981202469:web:b03a93947a7b4ba0b87dcc",
+      measurementId: "G-3KEK8ZV4J7"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const videoList = document.getElementById('videoList');
+
+    // Videoları realtime dinle, en son eklenenler en üstte olsun
+    const videosRef = query(ref(db, 'videos'), orderByChild('timestamp'));
+
+    onValue(videosRef, (snapshot) => {
+      const videos = [];
+      snapshot.forEach(childSnap => {
+        videos.push(childSnap.val());
+      });
+
+      // En son eklenen en üstte olsun diye ters çevir
+      videos.reverse();
+
+      videoList.innerHTML = '';
+
+      videos.forEach(video => {
+        const iframe = document.createElement('iframe');
+        iframe.src = `https://www.youtube.com/embed/${video.videoId}`;
+        iframe.allowFullscreen = true;
+        iframe.loading = "lazy";
+        iframe.className = 'video-item';
+        videoList.appendChild(iframe);
+      });
+    });
+  </script>
+</body>
+</html>
