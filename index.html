@@ -1,1 +1,284 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Uçan Kuş - NamenWy</title>
+  <style>
+    body {
+      margin: 0; background: #222; color: white; font-family: Arial, sans-serif;
+      display: flex; flex-direction: column; align-items: center;
+      height: 100vh; overflow: hidden;
+    }
+    #gameCanvas {
+      background: #70c5ce;
+      display: block;
+      margin: 20px auto;
+      border: 2px solid #000;
+      border-radius: 8px;
+    }
+    #leaderboard {
+      margin-top: 10px;
+      width: 300px;
+      background: #333;
+      padding: 10px;
+      border-radius: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    #themeToggle {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background: #444;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    #playerNameModal {
+      position: fixed;
+      top: 0; left: 0; right:0; bottom:0;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    #playerNameModalContent {
+      background: #111;
+      padding: 20px 30px;
+      border-radius: 10px;
+      text-align: center;
+      width: 90%;
+      max-width: 400px;
+    }
+    #playerNameModalContent input {
+      width: 80%;
+      padding: 10px;
+      margin-top: 15px;
+      font-size: 16px;
+      border-radius: 5px;
+      border: none;
+    }
+    #playerNameModalContent button {
+      margin-top: 20px;
+      padding: 10px 25px;
+      font-size: 16px;
+      background: #2196f3;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <button id="themeToggle">Beyaz Tema</button>
 
+  <canvas id="gameCanvas" width="400" height="600"></canvas>
+  <div id="leaderboard">
+    <h3>Liderlik Tablosu</h3>
+    <ul id="scoresList"></ul>
+  </div>
+
+  <!-- İsim Modal -->
+  <div id="playerNameModal" style="display:none;">
+    <div id="playerNameModalContent">
+      <h2>Hoşgeldin! İsmini gir lütfen</h2>
+      <input type="text" id="playerNameInput" placeholder="İsminiz..." />
+      <br />
+      <button id="saveNameBtn">Başla</button>
+    </div>
+  </div>
+
+  <script>
+    // Tema değiştirici
+    const themeToggle = document.getElementById('themeToggle');
+    let darkTheme = true;
+
+    function updateTheme() {
+      if(darkTheme) {
+        document.body.style.background = '#222';
+        document.body.style.color = 'white';
+        themeToggle.textContent = 'Beyaz Tema';
+      } else {
+        document.body.style.background = 'white';
+        document.body.style.color = 'black';
+        themeToggle.textContent = 'Koyu Tema';
+      }
+    }
+    themeToggle.addEventListener('click', () => {
+      darkTheme = !darkTheme;
+      updateTheme();
+    });
+    updateTheme();
+
+    // Oyuncu ismi yönetimi
+    const playerNameModal = document.getElementById('playerNameModal');
+    const playerNameInput = document.getElementById('playerNameInput');
+    const saveNameBtn = document.getElementById('saveNameBtn');
+
+    let playerName = localStorage.getItem('playerName');
+    if(!playerName) {
+      playerNameModal.style.display = 'flex';
+    } else {
+      startGame();
+    }
+
+    saveNameBtn.addEventListener('click', () => {
+      const val = playerNameInput.value.trim();
+      if(val.length < 1) {
+        alert("İsim boş olamaz!");
+        return;
+      }
+      playerName = val;
+      localStorage.setItem('playerName', playerName);
+      playerNameModal.style.display = 'none';
+      startGame();
+    });
+
+    // Basit uçan kuş oyunu (very simplified)
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let bird = { x: 50, y: 250, width: 40, height: 30, velocity: 0 };
+    let gravity = 0.6;
+    let lift = -12;
+    let pipes = [];
+    let pipeWidth = 60;
+    let pipeGap = 140;
+    let frameCount = 0;
+    let score = 0;
+    let gameOver = false;
+
+    // Başla fonksiyonu
+    function startGame() {
+      bird.y = 250;
+      bird.velocity = 0;
+      pipes = [];
+      frameCount = 0;
+      score = 0;
+      gameOver = false;
+      loop();
+    }
+
+    function loop() {
+      if(gameOver) return;
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    function update() {
+      frameCount++;
+      bird.velocity += gravity;
+      bird.y += bird.velocity;
+
+      // Kuş yere veya tavana çarptı mı?
+      if(bird.y + bird.height > canvas.height || bird.y < 0) {
+        gameOver = true;
+        alert("Oyun bitti! Skorun: " + score + "\nTekrar başlamak için sayfayı yenile.");
+        saveScore();
+        return;
+      }
+
+      // Boru oluşturma
+      if(frameCount % 90 === 0) {
+        let pipeTopHeight = Math.floor(Math.random() * (canvas.height - pipeGap - 100)) + 50;
+        pipes.push({
+          x: canvas.width,
+          topHeight: pipeTopHeight,
+          bottomY: pipeTopHeight + pipeGap,
+          bottomHeight: canvas.height - (pipeTopHeight + pipeGap),
+        });
+      }
+
+      // Boruları hareket ettir
+      for(let i = 0; i < pipes.length; i++) {
+        pipes[i].x -= 3;
+
+        // Skoru arttır
+        if(pipes[i].x + pipeWidth === bird.x) {
+          score++;
+        }
+
+        // Çarpışma kontrolü
+        if(
+          bird.x + bird.width > pipes[i].x &&
+          bird.x < pipes[i].x + pipeWidth &&
+          (bird.y < pipes[i].topHeight || bird.y + bird.height > pipes[i].bottomY)
+        ) {
+          gameOver = true;
+          alert("Oyun bitti! Skorun: " + score + "\nTekrar başlamak için sayfayı yenile.");
+          saveScore();
+          return;
+        }
+      }
+
+      // Boruları temizle
+      pipes = pipes.filter(p => p.x + pipeWidth > 0);
+    }
+
+    function draw() {
+      // Arka plan
+      ctx.fillStyle = darkTheme ? '#70c5ce' : '#a2d5f2';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Kuş
+      ctx.fillStyle = 'yellow';
+      ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
+
+      // Borular
+      ctx.fillStyle = 'green';
+      pipes.forEach(pipe => {
+        // Üst boru
+        ctx.fillRect(pipe.x, 0, pipeWidth, pipe.topHeight);
+        // Alt boru
+        ctx.fillRect(pipe.x, pipe.bottomY, pipeWidth, pipe.bottomHeight);
+      });
+
+      // Skor
+      ctx.fillStyle = darkTheme ? 'white' : 'black';
+      ctx.font = '24px Arial';
+      ctx.fillText("Skor: " + score, 10, 30);
+      ctx.fillText("Oyuncu: " + playerName, 10, 60);
+    }
+
+    // Kuşu uçur
+    window.addEventListener('keydown', e => {
+      if(e.code === "Space") {
+        bird.velocity = lift;
+      }
+    });
+    window.addEventListener('mousedown', e => {
+      bird.velocity = lift;
+    });
+
+    // Skoru localStorage'a kaydet (basit versiyon)
+    function saveScore() {
+      let scores = JSON.parse(localStorage.getItem('scores') || "[]");
+      scores.push({name: playerName, score: score});
+      // En yüksek 10 skor kalacak
+      scores = scores.sort((a,b) => b.score - a.score).slice(0,10);
+      localStorage.setItem('scores', JSON.stringify(scores));
+      updateLeaderboard();
+    }
+
+    // Liderlik tablosunu güncelle
+    function updateLeaderboard() {
+      let scores = JSON.parse(localStorage.getItem('scores') || "[]");
+      const scoresList = document.getElementById('scoresList');
+      scoresList.innerHTML = "";
+      scores.forEach((s,i) => {
+        const li = document.createElement('li');
+        li.textContent = `${i+1}. ${s.name}: ${s.score}`;
+        scoresList.appendChild(li);
+      });
+    }
+
+    updateLeaderboard();
+  </script>
+</body>
+</html>
