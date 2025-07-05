@@ -1,184 +1,67 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>NamenWy Son Videolar</title>
-  <style>
-    /* Tema ve stil kodları (koyu/açık tema için) */
-    :root {
-      --bg-light: #fff;
-      --bg-dark: #121212;
-      --text-light: #121212;
-      --text-dark: #eee;
-      --primary-color: #ff0000;
-    }
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: var(--bg-light);
-      color: var(--text-light);
-      transition: background-color 0.4s, color 0.4s;
-      min-height: 100vh;
-      padding: 1rem;
-    }
-    body.dark {
-      background-color: var(--bg-dark);
-      color: var(--text-dark);
-    }
-    #theme-toggle {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      background-color: var(--primary-color);
-      border: none;
-      color: white;
-      padding: 0.5rem 1rem;
-      cursor: pointer;
-      border-radius: 5px;
-      font-weight: bold;
-      z-index: 1000;
-      user-select: none;
-      transition: background-color 0.3s;
-    }
-    #theme-toggle:hover {
-      background-color: #cc0000;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 1rem;
-    }
-    #videos {
-      display: grid;
-      grid-template-columns: repeat(auto-fill,minmax(320px,1fr));
-      gap: 1rem;
-      max-width: 1000px;
-      margin: 0 auto;
-    }
-    .video-card {
-      background: #f0f0f0;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 4px 6px rgb(0 0 0 / 0.1);
-      cursor: pointer;
-      transform: translateY(20px);
-      opacity: 0;
-      animation: fadeInUp 0.6s forwards;
-      transition: box-shadow 0.3s;
-    }
-    body.dark .video-card {
-      background: #222;
-      box-shadow: 0 4px 8px rgb(255 255 255 / 0.1);
-    }
-    .video-card:hover {
-      box-shadow: 0 8px 14px rgb(0 0 0 / 0.2);
-    }
-    .thumbnail {
-      width: 100%;
-      height: 180px;
-      object-fit: cover;
-      display: block;
-    }
-    .video-info {
-      padding: 0.8rem;
-    }
-    .video-title {
-      font-size: 1rem;
-      font-weight: 600;
-      margin: 0 0 0.5rem;
-      color: inherit;
-    }
-    .video-date {
-      font-size: 0.85rem;
-      color: #666;
-    }
-    body.dark .video-date {
-      color: #aaa;
-    }
-    @keyframes fadeInUp {
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NamenWy Kanal Son Videolar (RSS)</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 1rem; background: #fff; color: #111; }
+  h1 { text-align: center; margin-bottom: 1rem; }
+  #videos { max-width: 800px; margin: auto; }
+  .video { border-bottom: 1px solid #ddd; padding: 10px 0; display: flex; gap: 10px; }
+  .thumbnail { width: 160px; height: 90px; object-fit: cover; }
+  .info { flex: 1; }
+  .title { font-weight: bold; font-size: 1.1rem; margin: 0 0 0.3rem; }
+  .date { color: #666; font-size: 0.9rem; }
+  a { color: #0066cc; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+</style>
 </head>
 <body>
-  <button id="theme-toggle">Koyu Tema</button>
-  <h1>NamenWy Son Videolar</h1>
-  <div id="videos">Yükleniyor...</div>
 
-  <script>
-    const apiKey = "AIzaSyAeDYJ2RovW0zBenJOIhs3LvJC3ZtC-RNQ";
-    const channelId = "UCd6FqGfYHzCzVq5C4xHCWXQ";
+<h1>NamenWy Kanal Son Videolar (RSS)</h1>
+<div id="videos">Yükleniyor...</div>
 
-    const videosContainer = document.getElementById("videos");
-    const themeToggle = document.getElementById("theme-toggle");
+<script>
+  const rssUrl = encodeURIComponent('https://www.youtube.com/feeds/videos.xml?channel_id=UCd6FqGfYHzCzVq5C4xHCWXQ');
+  const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}`;
 
-    function setTheme(dark) {
-      if(dark) {
-        document.body.classList.add("dark");
-        themeToggle.textContent = "Açık Tema";
-      } else {
-        document.body.classList.remove("dark");
-        themeToggle.textContent = "Koyu Tema";
+  const videosDiv = document.getElementById('videos');
+
+  fetch(apiUrl)
+    .then(res => res.json())
+    .then(data => {
+      if (!data.items || data.items.length === 0) {
+        videosDiv.textContent = "Video bulunamadı veya servis hatası.";
+        return;
       }
-    }
 
-    themeToggle.addEventListener("click", () => {
-      const isDark = document.body.classList.toggle("dark");
-      setTheme(isDark);
-      localStorage.setItem("darkTheme", isDark);
+      videosDiv.innerHTML = '';
+
+      data.items.forEach(item => {
+        const videoId = item.link.split('v=')[1];
+        const publishedDate = new Date(item.pubDate).toLocaleDateString('tr-TR');
+
+        const videoElem = document.createElement('div');
+        videoElem.className = 'video';
+
+        videoElem.innerHTML = `
+          <a href="${item.link}" target="_blank" rel="noopener">
+            <img class="thumbnail" src="https://img.youtube.com/vi/${videoId}/hqdefault.jpg" alt="${item.title}" />
+          </a>
+          <div class="info">
+            <a href="${item.link}" target="_blank" rel="noopener" class="title">${item.title}</a>
+            <div class="date">${publishedDate}</div>
+          </div>
+        `;
+
+        videosDiv.appendChild(videoElem);
+      });
+    })
+    .catch(err => {
+      videosDiv.textContent = "Veri çekilirken hata oluştu: " + err.message;
     });
+</script>
 
-    window.onload = () => {
-      const savedTheme = localStorage.getItem("darkTheme") === "true";
-      setTheme(savedTheme);
-      fetchVideos();
-    };
-
-    function fetchVideos() {
-      const url = `https://www.googleapis.com/youtube/v3/search?key=${apiKey}&channelId=${channelId}&part=snippet,id&order=date&maxResults=6`;
-
-      fetch(url)
-        .then(res => res.json())
-        .then(data => {
-          if(!data.items) {
-            videosContainer.textContent = "Video bulunamadı veya API limiti dolmuş olabilir.";
-            return;
-          }
-          videosContainer.innerHTML = "";
-
-          data.items.forEach((item, i) => {
-            if(item.id.kind !== "youtube#video") return;
-
-            const videoId = item.id.videoId;
-            const title = item.snippet.title;
-            const thumbnail = item.snippet.thumbnails.high.url;
-            const publishedAt = new Date(item.snippet.publishedAt).toLocaleDateString("tr-TR");
-
-            const videoCard = document.createElement("a");
-            videoCard.href = `https://www.youtube.com/watch?v=${videoId}`;
-            videoCard.target = "_blank";
-            videoCard.className = "video-card";
-            videoCard.style.animationDelay = (i * 0.1) + "s";
-
-            videoCard.innerHTML = `
-              <img class="thumbnail" src="${thumbnail}" alt="${title}" loading="lazy" />
-              <div class="video-info">
-                <h3 class="video-title">${title}</h3>
-                <div class="video-date">${publishedAt}</div>
-              </div>
-            `;
-
-            videosContainer.appendChild(videoCard);
-          });
-        })
-        .catch(err => {
-          videosContainer.textContent = "Bir hata oluştu: " + err.message;
-          console.error(err);
-        });
-    }
-  </script>
 </body>
 </html>
