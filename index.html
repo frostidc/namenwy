@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>NamenWy Son Videolar</title>
   <style>
+    /* Tema ve stil kodları (koyu/açık tema için) */
     :root {
       --bg-light: #fff;
       --bg-dark: #121212;
@@ -108,13 +109,12 @@
   <div id="videos">Yükleniyor...</div>
 
   <script>
-    const apiKey = "API_KEY"; // BURAYA kendi YouTube API anahtarını yaz
+    const apiKey = "AIzaSyAeDYJ2RovW0zBenJOIhs3LvJC3ZtC-RNQ";
     const channelId = "UCd6FqGfYHzCzVq5C4xHCWXQ";
 
     const videosContainer = document.getElementById("videos");
     const themeToggle = document.getElementById("theme-toggle");
 
-    // Tema ayarı
     function setTheme(dark) {
       if(dark) {
         document.body.classList.add("dark");
@@ -125,27 +125,23 @@
       }
     }
 
-    // Butona tıklandığında temayı değiştir
     themeToggle.addEventListener("click", () => {
       const isDark = document.body.classList.toggle("dark");
       setTheme(isDark);
-      // İstersen localStorage'a kaydedebilirsin
       localStorage.setItem("darkTheme", isDark);
     });
 
-    // Sayfa yüklendiğinde önce localStorage'dan tema oku
     window.onload = () => {
       const savedTheme = localStorage.getItem("darkTheme") === "true";
       setTheme(savedTheme);
       fetchVideos();
     };
 
-    // Videoları API'den çek
     function fetchVideos() {
       const url = `https://www.googleapis.com/youtube/v3/search?key=${apiKey}&channelId=${channelId}&part=snippet,id&order=date&maxResults=6`;
 
       fetch(url)
-        .then(response => response.json())
+        .then(res => res.json())
         .then(data => {
           if(!data.items) {
             videosContainer.textContent = "Video bulunamadı veya API limiti dolmuş olabilir.";
@@ -154,7 +150,7 @@
           videosContainer.innerHTML = "";
 
           data.items.forEach((item, i) => {
-            if(item.id.kind !== "youtube#video") return; // sadece videolar
+            if(item.id.kind !== "youtube#video") return;
 
             const videoId = item.id.videoId;
             const title = item.snippet.title;
