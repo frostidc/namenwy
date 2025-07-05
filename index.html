@@ -2,136 +2,187 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Namenwy - Yeni Videolar</title>
-  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600&display=swap" rel="stylesheet">
-
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NamenWy Son Videolar</title>
   <style>
     :root {
-      --bg-color: #0f0f0f;
-      --text-color: white;
-      --card-bg: #1a1a1a;
+      --bg-light: #fff;
+      --bg-dark: #121212;
+      --text-light: #121212;
+      --text-dark: #eee;
+      --primary-color: #ff0000;
     }
-
-    body.light {
-      --bg-color: #f7f7f7;
-      --text-color: #111;
-      --card-bg: #ffffff;
-    }
-
     body {
       margin: 0;
-      padding: 0;
-      font-family: 'Rubik', sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      transition: background-color 0.5s, color 0.5s;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-light);
+      color: var(--text-light);
+      transition: background-color 0.4s, color 0.4s;
+      min-height: 100vh;
+      padding: 1rem;
     }
-
-    #themeToggle {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      background: none;
-      color: var(--text-color);
-      border: 2px solid var(--text-color);
-      padding: 6px 12px;
-      cursor: pointer;
-      font-weight: bold;
-      border-radius: 6px;
-      transition: background 0.3s, color 0.3s;
+    body.dark {
+      background-color: var(--bg-dark);
+      color: var(--text-dark);
     }
-
-    #themeToggle:hover {
-      background: var(--text-color);
-      color: var(--bg-color);
-    }
-
-    h1 {
-      margin-top: 80px;
-      font-size: 2.4rem;
-      animation: fadeInDown 1s ease;
-    }
-
-    .video {
-      background-color: var(--card-bg);
-      border-radius: 10px;
-      margin: 20px;
-      padding: 15px;
-      width: 90%;
-      max-width: 600px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.4);
-      transition: transform 0.3s, background-color 0.5s;
-      animation: fadeIn 1s ease both;
-    }
-
-    .video:hover {
-      transform: translateY(-5px);
-    }
-
-    iframe {
-      width: 100%;
-      height: 315px;
+    #theme-toggle {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background-color: var(--primary-color);
       border: none;
+      color: white;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      border-radius: 5px;
+      font-weight: bold;
+      z-index: 1000;
+      user-select: none;
+      transition: background-color 0.3s;
+    }
+    #theme-toggle:hover {
+      background-color: #cc0000;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    #videos {
+      display: grid;
+      grid-template-columns: repeat(auto-fill,minmax(320px,1fr));
+      gap: 1rem;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .video-card {
+      background: #f0f0f0;
       border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgb(0 0 0 / 0.1);
+      cursor: pointer;
+      transform: translateY(20px);
+      opacity: 0;
+      animation: fadeInUp 0.6s forwards;
+      transition: box-shadow 0.3s;
     }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+    body.dark .video-card {
+      background: #222;
+      box-shadow: 0 4px 8px rgb(255 255 255 / 0.1);
     }
-
-    @keyframes fadeInDown {
-      from { opacity: 0; transform: translateY(-30px); }
-      to { opacity: 1; transform: translateY(0); }
+    .video-card:hover {
+      box-shadow: 0 8px 14px rgb(0 0 0 / 0.2);
+    }
+    .thumbnail {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      display: block;
+    }
+    .video-info {
+      padding: 0.8rem;
+    }
+    .video-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0 0 0.5rem;
+      color: inherit;
+    }
+    .video-date {
+      font-size: 0.85rem;
+      color: #666;
+    }
+    body.dark .video-date {
+      color: #aaa;
+    }
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
   </style>
 </head>
 <body>
-  <button id="themeToggle">☀ Açık Tema</button>
-  <h1>Namenwy - Yeni Videolar</h1>
-  <div id="videos"></div>
+  <button id="theme-toggle">Koyu Tema</button>
+  <h1>NamenWy Son Videolar</h1>
+  <div id="videos">Yükleniyor...</div>
 
   <script>
-    const apiKey = "AIzaSyAeDYJ2RovW0zBenJOIhs3LvJC3ZtC-RNQ"; // YouTube API key
-    const channelId = "UCdJ8veehKRMFc3vRBiVaV1g"; // Namenwy kanal ID
-    const apiURL = `https://www.googleapis.com/youtube/v3/search?key=${apiKey}&channelId=${channelId}&part=snippet,id&order=date&maxResults=6`;
+    const apiKey = "API_KEY"; // BURAYA kendi YouTube API anahtarını yaz
+    const channelId = "UCd6FqGfYHzCzVq5C4xHCWXQ";
 
-    fetch(apiURL)
-      .then(response => response.json())
-      .then(data => {
-        const container = document.getElementById("videos");
-        data.items.forEach(item => {
-          if (item.id.kind === "youtube#video") {
+    const videosContainer = document.getElementById("videos");
+    const themeToggle = document.getElementById("theme-toggle");
+
+    // Tema ayarı
+    function setTheme(dark) {
+      if(dark) {
+        document.body.classList.add("dark");
+        themeToggle.textContent = "Açık Tema";
+      } else {
+        document.body.classList.remove("dark");
+        themeToggle.textContent = "Koyu Tema";
+      }
+    }
+
+    // Butona tıklandığında temayı değiştir
+    themeToggle.addEventListener("click", () => {
+      const isDark = document.body.classList.toggle("dark");
+      setTheme(isDark);
+      // İstersen localStorage'a kaydedebilirsin
+      localStorage.setItem("darkTheme", isDark);
+    });
+
+    // Sayfa yüklendiğinde önce localStorage'dan tema oku
+    window.onload = () => {
+      const savedTheme = localStorage.getItem("darkTheme") === "true";
+      setTheme(savedTheme);
+      fetchVideos();
+    };
+
+    // Videoları API'den çek
+    function fetchVideos() {
+      const url = `https://www.googleapis.com/youtube/v3/search?key=${apiKey}&channelId=${channelId}&part=snippet,id&order=date&maxResults=6`;
+
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          if(!data.items) {
+            videosContainer.textContent = "Video bulunamadı veya API limiti dolmuş olabilir.";
+            return;
+          }
+          videosContainer.innerHTML = "";
+
+          data.items.forEach((item, i) => {
+            if(item.id.kind !== "youtube#video") return; // sadece videolar
+
             const videoId = item.id.videoId;
             const title = item.snippet.title;
-            const iframe = `
-              <div class="video">
-                <h3>${title}</h3>
-                <iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe>
-              </div>`;
-            container.innerHTML += iframe;
-          }
-        });
-      })
-      .catch(error => {
-        console.error("YouTube API hatası:", error);
-        document.getElementById("videos").innerText = "Videolar alınamadı.";
-      });
+            const thumbnail = item.snippet.thumbnails.high.url;
+            const publishedAt = new Date(item.snippet.publishedAt).toLocaleDateString("tr-TR");
 
-    // Tema değiştirme
-    const btn = document.getElementById("themeToggle");
-    btn.addEventListener("click", () => {
-      document.body.classList.toggle("light");
-      if (document.body.classList.contains("light")) {
-        btn.textContent = "🌙 Karanlık Tema";
-      } else {
-        btn.textContent = "☀ Açık Tema";
-      }
-    });
+            const videoCard = document.createElement("a");
+            videoCard.href = `https://www.youtube.com/watch?v=${videoId}`;
+            videoCard.target = "_blank";
+            videoCard.className = "video-card";
+            videoCard.style.animationDelay = (i * 0.1) + "s";
+
+            videoCard.innerHTML = `
+              <img class="thumbnail" src="${thumbnail}" alt="${title}" loading="lazy" />
+              <div class="video-info">
+                <h3 class="video-title">${title}</h3>
+                <div class="video-date">${publishedAt}</div>
+              </div>
+            `;
+
+            videosContainer.appendChild(videoCard);
+          });
+        })
+        .catch(err => {
+          videosContainer.textContent = "Bir hata oluştu: " + err.message;
+          console.error(err);
+        });
+    }
   </script>
 </body>
 </html>
